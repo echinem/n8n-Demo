@@ -1,0 +1,370 @@
+{
+  "name": "AI Enrich",
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1ZtnvkrAqiYZKY5b4WvvWTOSfLT45K2PRnJkzY45k7Yg/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        80,
+        40
+      ],
+      "id": "9fb0e693-b396-416a-ad88-b645a9742822",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Km0HeYvMgiRuvz4T",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        300,
+        40
+      ],
+      "id": "309a77f7-3845-41cf-9b37-f73ffa72537b",
+      "name": "Remove Duplicates"
+    },
+    {
+      "parameters": {
+        "jsCode": "const allItems = $input.all().map(item => item.json);\n\nreturn [\n  {\n    json: {\n      companies: JSON.stringify(allItems)\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        40
+      ],
+      "id": "af7fc162-f086-41cb-96a0-8e5007d3e2de",
+      "name": "Code",
+      "notesInFlow": true,
+      "notes": "Convert to a single object"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a helpful AI assistant specialized in enriching company data.\n\nGiven a list of companies, extract or infer the following fields for each:\n\n- country: The country where the company is based or primarily operates.\n- company_size: Categorize as \"Small\", \"Medium\", or \"Large\" based on employee count or description.\n- industry: The main industry sector the company belongs to.\n- role_in_RFID: Choose from:\n  - \"End-User\"\n  - \"System/Software Integrator\"\n  - \"Manufacturer\"\n  - \"Other\"\n- decision_maker: Based on public information, who is the CEO, MD, or Head of Product? Return \"Unknown\" if unsure.\n\nHere is the list:\n\n{{ $json[\"companies\"] }}\n\nReturn only a JSON array where each object follows this format:\n{\n  \"row_number\": ...,\n  \"country\": \"...\",\n  \"company_size\": \"...\",\n  \"industry\": \"...\",\n  \"role_in_RFID\": \"...\",\n  \"decision_maker\": \"...\"\n}",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        740,
+        40
+      ],
+      "id": "9a562ca0-348c-4e74-a822-061e8fc24230",
+      "name": "Basic LLM Chain",
+      "notesInFlow": true,
+      "notes": "Get details from AI"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        800,
+        240
+      ],
+      "id": "d102fb20-6df2-4592-a282-9a0d80dea7b9",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "q9pAeK9hHY9jis10",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the raw string from LLM response\nconst rawText = $json.text;\n\n// Remove code block markers and trim whitespace\nconst cleanText = rawText.replace(/```json|```/g, '').trim();\n\n// Parse the JSON string into an array\nlet parsed;\ntry {\n  parsed = JSON.parse(cleanText);\n} catch (e) {\n  throw new Error('Failed to parse JSON: ' + e.message);\n}\n\n// Return each parsed object as its own item\nreturn parsed.map(entry => ({ json: entry }));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1116,
+        40
+      ],
+      "id": "8e211f9d-f50e-416f-b0c5-f2ff1cecd234",
+      "name": "Code1",
+      "notesInFlow": true,
+      "notes": "Convert back to JSON"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1ZtnvkrAqiYZKY5b4WvvWTOSfLT45K2PRnJkzY45k7Yg/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $json.row_number }}",
+            "Industry": "={{ $json.industry }}",
+            "Country": "={{ $json.country }}",
+            "Company Size": "={{ $json.company_size }}",
+            "RFID Role": "={{ $json.role_in_RFID }}",
+            "Decision Maker": "={{ $json.decision_maker }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Booth",
+              "displayName": "Booth",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Country",
+              "displayName": "Country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company Size",
+              "displayName": "Company Size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Industry",
+              "displayName": "Industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "RFID Role",
+              "displayName": "RFID Role",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Decision Maker",
+              "displayName": "Decision Maker",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1336,
+        40
+      ],
+      "id": "3a6f2d69-1620-4c02-aa60-33c052c4fb7e",
+      "name": "Google Sheets1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Km0HeYvMgiRuvz4T",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputSource": "jsonExample",
+        "jsonExample": "{\n  \"Name\": \"a string\"\n}"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -140,
+        40
+      ],
+      "id": "77f61bb3-947c-4c3d-9b99-c4f35ee7ebfe",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9d14f7a7-2463-4779-8aab-acd8d9a41e87",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fdc873c3624c460fc270aebc24c870a43443ba7811b1e50822aa1e58351e16c8"
+  },
+  "id": "1v8e383CSlTAxMZy",
+  "tags": []
+}

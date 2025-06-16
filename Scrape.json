@@ -1,0 +1,252 @@
+{
+  "name": "Scrape",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        80,
+        -80
+      ],
+      "id": "11f36a01-c42b-4fd7-b12e-5f92e25dafd3",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "const html = $input.item.json.data;\n\nconst regex = /<tr[^>]*data-id=\"(\\d+)\"[^>]*data-booth-number=\"([^\"]+)\"[^>]*>[\\s\\S]*?<div[^>]*class=\"mb-2[^\"]*\"[^>]*>([^<]+)<\\/div>/g;\n\nconst extracted = [];\nlet match;\n\nwhile ((match = regex.exec(html)) !== null) {\n  extracted.push({\n    id: match[1],\n    booth: match[2],\n    company: match[3].trim(),\n  });\n}\n\nreturn extracted.length > 0 ? extracted : [{ error: \"No matches found\" }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        -80
+      ],
+      "id": "e2c402db-bd75-4039-af7d-f506bb2f3b4b",
+      "name": " Code to get Booth",
+      "alwaysOutputData": true,
+      "notesInFlow": true,
+      "notes": "Get id, name & booth number from HTML"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b5286385-f15e-41c3-8415-b1b52444ff9d",
+              "name": "id",
+              "value": "={{ $json.results[0].hits[0].id }}",
+              "type": "number"
+            },
+            {
+              "id": "cd51cf63-d220-44ed-9a0d-4b57a09fad24",
+              "name": "name",
+              "value": "={{ $json.results[0].hits[0].name.en }}",
+              "type": "string"
+            },
+            {
+              "id": "8189b8df-b26b-40ec-bbb6-2fbdd84ad917",
+              "name": "booth",
+              "value": "={{ $(' Code to get Booth').item.json.booth }}",
+              "type": "string"
+            },
+            {
+              "id": "7ad3fbc4-436c-486b-a336-25b21c31ade9",
+              "name": "description",
+              "value": "={{ $json.results[0].hits[0].description.en.replace(/<[^>]*>/g, '') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        960,
+        -80
+      ],
+      "id": "1326e271-9e3e-40a1-993b-9dff9090cc01",
+      "name": "Edit Fields1",
+      "notesInFlow": true,
+      "notes": "Extract id, name, desc"
+    },
+    {
+      "parameters": {
+        "url": "https://wiot-group.com/tomorrow/en/expo/exhibitor-directory/",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        -80
+      ],
+      "id": "82727a1e-9fa8-46d6-a117-d439fb54fd28",
+      "name": "HTTP Request",
+      "notesInFlow": true,
+      "notes": "Get HTML"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://search.wiot-group.com/multi-search",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Authorization\": \"Bearer 63dd1477e0f2db261039153e9d1da0ba35304f9d6014353ebdd8bdb2c4ade82f\",\n  \"Content-Type\": \"application/json\",\n  \"Origin\": \"https://wiot-group.com\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"queries\": [\n    {\n      \"indexUid\": \"tom_companies\",\n      \"filter\": \"id = {{ $json.id }}\",\n      \"limit\": 1\n    }\n  ]\n}\n",
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        740,
+        -80
+      ],
+      "id": "41dac51b-bcd2-4756-90b8-1fb8345c5733",
+      "name": "HTTP Request2",
+      "notesInFlow": true,
+      "notes": "Get id, name, description from HTML"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e989d56b-645a-47f6-89b7-f0138ad0cb53",
+              "leftValue": "={{ $json.name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "3a21adf1-380a-4994-81d6-26059394d00c",
+              "leftValue": "={{ $json.booth }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "3de9ebbe-b219-4c93-ad1d-1dd80f7dce65",
+              "leftValue": "={{ $json.description }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        1180,
+        -80
+      ],
+      "id": "567685b8-a838-4542-83d1-ec363b95f765",
+      "name": "Filter",
+      "notesInFlow": true,
+      "notes": "Remove empty entries"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    " Code to get Booth": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": " Code to get Booth",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6868b1c2-a04b-47a3-86fa-dfa9822dd289",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fdc873c3624c460fc270aebc24c870a43443ba7811b1e50822aa1e58351e16c8"
+  },
+  "id": "I1CDDADW6ewpS04K",
+  "tags": []
+}

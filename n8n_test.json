@@ -1,0 +1,233 @@
+{
+  "name": "n8n-test",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -140,
+        0
+      ],
+      "id": "1bdf5345-35cc-4ab5-9ea5-1dc4831406fe",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "vkSMmGQbBe6CDDht",
+          "mode": "list",
+          "cachedResultName": "My project — Bonus"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        840,
+        0
+      ],
+      "id": "28dc1a7c-4127-4280-8418-04e2262d26ea",
+      "name": "Bonus"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "8z5lac8xil8zU66k",
+          "mode": "list",
+          "cachedResultName": "My project — Persist"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $json.name }}",
+            "Booth": "={{ $json.booth }}",
+            "Description": "={{ $json.description }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Booth",
+              "displayName": "Booth",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        300,
+        0
+      ],
+      "id": "92c0cea2-fb22-46e2-b4ee-16e03d215969",
+      "name": "Persist"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "I1CDDADW6ewpS04K",
+          "mode": "list",
+          "cachedResultName": "My project — Scrape"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        80,
+        0
+      ],
+      "id": "16040c75-2b0d-414f-8f24-3296b867ebd5",
+      "name": "Scrape"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "1v8e383CSlTAxMZy",
+          "mode": "list",
+          "cachedResultName": "My project — AI Enrich"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $json.Name }}"
+          },
+          "matchingColumns": [
+            "Name"
+          ],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        0
+      ],
+      "id": "879af17a-1ae7-46ea-9634-f95846a0b841",
+      "name": "AI Enrich"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Scrape",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist": {
+      "main": [
+        [
+          {
+            "node": "AI Enrich",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape": {
+      "main": [
+        [
+          {
+            "node": "Persist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Enrich": {
+      "main": [
+        [
+          {
+            "node": "Bonus",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "466bf549-b557-46d7-8a01-be302fdbef81",
+  "meta": {
+    "instanceId": "fdc873c3624c460fc270aebc24c870a43443ba7811b1e50822aa1e58351e16c8"
+  },
+  "id": "aTtmNjCJ9OZdoCuU",
+  "tags": []
+}

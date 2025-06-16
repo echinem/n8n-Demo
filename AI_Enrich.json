@@ -25,8 +25,8 @@
       "name": "Google Sheets",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "Km0HeYvMgiRuvz4T",
-          "name": "Google Sheets account 2"
+          "id": "#",
+          "name": "#"
         }
       }
     },
@@ -91,8 +91,8 @@
       "name": "Google Gemini Chat Model",
       "credentials": {
         "googlePalmApi": {
-          "id": "q9pAeK9hHY9jis10",
-          "name": "Google Gemini(PaLM) Api account 2"
+          "id": "#",
+          "name": "#"
         }
       }
     },
@@ -245,8 +245,8 @@
       "name": "Google Sheets1",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "Km0HeYvMgiRuvz4T",
-          "name": "Google Sheets account 2"
+          "id": "#",
+          "name": "#"
         }
       }
     },
